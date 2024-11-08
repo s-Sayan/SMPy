@@ -306,6 +306,32 @@ def _shuffle_ra_dec(shear_df):
 
     return shuffled_df
 
+def _shuffle_galaxy_rotation(shear_df):
+    """The function will shuffle the galaxy rotation in the input shear_df DataFrame.
+
+    Args:
+        shear_df (_type_): _description_
+    """
+    
+    # Make a copy to avoid modifying the original
+    shuffled_df = shear_df.copy()
+    
+    # Shuffle the galaxy rotation
+    g1, g2 = shuffled_df['g1'], shuffled_df['g2']
+    
+    # Add a random angle to the galaxy rotation
+    angle = np.random.uniform(0, 2 * np.pi, len(g1))
+    g1g2_len = np.sqrt(np.array(g1)**2 + np.array(g2)**2)
+    g1g2_angle  = np.arctan2(g2, g1) + angle
+    g1_new = g1g2_len * np.cos(g1g2_angle)
+    g2_new = g1g2_len * np.sin(g1g2_angle)
+    
+    shuffled_df['g1'] = g1_new
+    shuffled_df['g2'] = g2_new
+    
+    return shuffled_df
+    
+
 def generate_multiple_shear_dfs(og_shear_df, num_shuffles=100, seed=42):
     """
     Generate a list of multiple data frames with shuffled RA and DEC columns by calling the load and shuffle functions.
@@ -320,7 +346,7 @@ def generate_multiple_shear_dfs(og_shear_df, num_shuffles=100, seed=42):
         
     # Loop to generate multiple shuffled data frames
     for i in range(num_shuffles):
-        shuffled_df = _shuffle_ra_dec(og_shear_df)
+        shuffled_df = _shuffle_galaxy_rotation(og_shear_df)
         shuffled_dfs.append(shuffled_df)
     
     return shuffled_dfs
