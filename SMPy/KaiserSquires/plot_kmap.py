@@ -262,7 +262,7 @@ def plot_convergence_v3(convergence, boundaries, config, output_name="Converenge
     )
     
     if center_cl is not None:
-        ra_c, dec_c = center_cl["ra_c"], center_cl["dec_c"]
+        ra_c, dec_c = center_cl["ra_center"], center_cl["dec_center"]
         ax.plot(ra_c, dec_c, 'wx', markersize=10)
         
     # convert x,y to ra,dec
@@ -295,7 +295,7 @@ def plot_convergence_v3(convergence, boundaries, config, output_name="Converenge
     #fig.savefig(config['output_path'])
     plt.close(fig)
 
-def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,  output_name="Converenge map", center_cl=None, smoothing=None, invert_map=True, vmax=None, vmin=None, title=None, threshold = None):
+def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,  output_name="Converenge map", center_cl=None, smoothing=None, invert_map=True, vmax=None, vmin=None, title=None, threshold = None, con_peaks=None):
     """
     Make plot of convergence map and save to file using information passed
     in run configuration file. 
@@ -336,11 +336,32 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
         filtered_convergence = gaussian_filter(convergence, smoothing)
     else:
         filtered_convergence = convergence
-        
+    
+    # Determine the central 50% area
+    ny, nx = filtered_convergence.shape
+    x_start, x_end = nx // 4, 3 * nx // 4
+    y_start, y_end = ny // 4, 3 * ny // 4
+   
+    peaks = find_peaks2d(filtered_convergence[:,::-1], threshold=threshold, include_border=False, ordered=False) if threshold is not None else ([], [], [])
+    
+    # Find peaks which are in the central 50% area
+    filtered_indices = [i for i in range(len(peaks[0])) if y_start <= peaks[0][i] < y_end and x_start <= peaks[1][i] < x_end]
+    peaks = ([peaks[0][i] for i in filtered_indices], [peaks[1][i] for i in filtered_indices], [peaks[2][i] for i in filtered_indices])
+    
+    # find the center of the peaks by adding 0.5 with every pixel
+    peaks = ([x+0.5 for x in peaks[0]], [y+0.5 for y in peaks[1]], peaks[2])
+    
+    print(f"Number of peaks: {len(peaks[0])}")
+    
     if invert_map:
-        peaks = (find_peaks2d(filtered_convergence, threshold=threshold, include_border=False) if threshold is not None else ([], [], []))
+        #peaks = find_peaks2d(filtered_convergence, threshold=threshold, include_border=False) if threshold is not None else ([], [], [])
+        xcr = []
+        for x in peaks[1]:
+            xcr.append(filtered_convergence.shape[1] - x)
+        peaks = (peaks[0], xcr, peaks[2])
     else:
-        peaks = (find_peaks2d(filtered_convergence[:, ::-1], threshold=threshold, include_border=False) if threshold is not None else ([], [], []))
+#        peaks = find_peaks2d(filtered_convergence[:,::-1], threshold=threshold, include_border=False) if threshold is not None else ([], [], [])
+        peaks = ([x for x in peaks[0]], [y-1.0 for y in peaks[1]], peaks[2])
     ra_peaks = [scaled_boundaries['ra_min'] + (x) * (scaled_boundaries['ra_max'] - scaled_boundaries['ra_min']) / filtered_convergence.shape[1] for x in peaks[1]]
     dec_peaks = [scaled_boundaries['dec_min'] + (y) * (scaled_boundaries['dec_max'] - scaled_boundaries['dec_min']) / filtered_convergence.shape[0] for y in peaks[0]]        
     if invert_map:
@@ -353,16 +374,24 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     fig, ax = plt.subplots(
         nrows=1, ncols=1, figsize=config['figsize'], tight_layout=True
     )
+    if threshold is not None:
+        for ra, dec, peak_value in zip(ra_peaks, dec_peaks, peaks[2]):
+            ax.scatter(ra, dec, s=50, facecolors='none', edgecolors='g', linewidth=1.5, label='Convergence Peak = %f' % peak_value)
+        # To avoid multiple identical legend entries, we can add a single legend entry manually
+        ax.legend(['Convergence Peaks'])
+    extent = [scaled_boundaries['ra_max'], 
+                scaled_boundaries['ra_min'], 
+                scaled_boundaries['dec_min'], 
+                scaled_boundaries['dec_max']]
+    
+    #extent = [scaled_boundaries['ra_min'], scaled_boundaries['ra_max'], scaled_boundaries['dec_min'], scaled_boundaries['dec_max']]
     
     im = ax.imshow(
         filtered_convergence, 
         cmap=config['cmap'],
         vmax=vmax, 
         vmin=vmin,
-        extent=[scaled_boundaries['ra_max'], 
-                scaled_boundaries['ra_min'], 
-                scaled_boundaries['dec_min'], 
-                scaled_boundaries['dec_max']],
+        extent=extent,
         origin='lower' # Sets the origin to bottom left to match the RA/DEC convention
     )
     
@@ -382,11 +411,14 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
         ra_center = dec_center = None
 
     if ra_center is not None:
+        if not invert_map:
+            ra_center =  (scaled_boundaries['ra_max'] - ra_center) + scaled_boundaries['ra_min']
         ax.scatter(ra_center, dec_center, marker='x', color='lime', s=75, label='Nominal Cluster Center')
         #ax.axhline(y=dec_center, color='w', linestyle='--')
         #ax.axvline(x=ra_center, color='w', linestyle='--')
-    if threshold is not None:
-        ax.scatter(ra_peaks, dec_peaks, s=75, facecolors='none', edgecolors='g', linewidth=1.5, label='Convergence Peak')
+        
+
+
 
 
     # Determine nice step sizes based on the range
@@ -439,10 +471,11 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
 
     # Save to file and exit, redoing tight_layout b/c sometimes figure gets cut off 
     fig.tight_layout() 
-    plt.show()
-    #fig.savefig(config['output_path'])
+    #plt.show(block=True)
+    #plt.show()
+    fig.savefig(config['output_path'])
     plt.close(fig)
-    return peaks[1]
+    return ra_peaks, dec_peaks, peaks[2]
 
 def plot_animation(convergence, boundaries, config, output_name='animation.mp4', center_cl=None, smoothing=False, num_frames=50, fps=5):
     """

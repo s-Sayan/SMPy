@@ -342,7 +342,7 @@ def generate_multiple_shear_dfs(og_shear_df, num_shuffles=100, seed=42):
     shuffled_dfs = []
     
     #set a seed for reproducibility
-    random.seed(seed)
+    np.random.seed(seed)
         
     # Loop to generate multiple shuffled data frames
     for i in range(num_shuffles):

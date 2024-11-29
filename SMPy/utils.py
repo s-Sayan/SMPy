@@ -2,10 +2,16 @@ import numpy as np
 import pandas as pd
 import random
 from SMPy.KaiserSquires import kaiser_squires
+from scipy.ndimage import gaussian_filter
 
 from astropy.table import Table
 from astropy.io import fits
 from astropy.wcs import WCS
+from lenspack.peaks import find_peaks2d
+
+
+factor_xy = 425.4 # this is ratio of x-y pixel units to arcmin
+factor_ra_dec = 1/60 # this is ratio of ra-dec pixel units to arcmin
 
 def load_shear_data(shear_cat_path, ra_col, dec_col, g1_col, g2_col, weight_col):
     """ 
@@ -382,7 +388,7 @@ def ks_inversion_list(grid_list, key="ra_dec"):
     return kappa_e_list, kappa_b_list
 
 
-def g1g2_to_gt_gc(g1, g2, ra, dec, ra_c, dec_c, pix_ra = 100):
+def g1g2_to_gt_gc(g1, g2, ra, dec, ra_c, dec_c, pix_ra = 100, key="ra-dec"):
     """
     Convert reduced shear to tangential and cross shear (Eq. 10, 11 in McCleary et al. 2023).
     args:
@@ -398,11 +404,163 @@ def g1g2_to_gt_gc(g1, g2, ra, dec, ra_c, dec_c, pix_ra = 100):
     aspect_ratio = (ra_max - ra_min) / (dec_max - dec_min)
     pix_dec = int(pix_ra / aspect_ratio)
     ra_grid, dec_grid = np.meshgrid(np.linspace(ra_min, ra_max, pix_ra), np.linspace(dec_min, dec_max, pix_dec))
+#    print(ra_grid.shape, dec_grid.shape, ra_c, dec_c)
 
     phi = np.arctan2(dec_grid - dec_c, ra_grid - ra_c)
+    
+    if key == "ra-dec":
+        phi = phi[:, ::-1]
+    elif key == "x-y":
+        phi = phi
+    else:
+        raise ValueError("Unknown key, must be either 'ra-dec' or 'x-y'")
+#    phi = phi[:, ::-1] # flip the phi array to match the shape of g1, g2
     
     # Calculate the tangential and cross components
     gt = -g1 * np.cos(2 * phi) - g2 * np.sin(2 * phi)
     gc = -g1 * np.sin(2 * phi) + g2 * np.cos(2 * phi)
 
     return gt, gc, phi
+
+def profile_1D(kappa, boundaries, resolution, center, smoothing=1.5, num_bins = 40, r_max_arcmin = 12, key="x-y"):
+    """
+    Calculate the 1D profile of the convergence map.
+    args:
+    - kappa: Convergence map.
+    - ra, dec: Right ascension and declination of the catalogue,i.e. shear_df['ra'], shear_df['dec'].
+    - ra_c, dec_c: Right ascension and declination of the cluster-centre.
+    
+    returns:
+    - r: Radial distance from the cluster centre.
+    - kappa_1d: 1D profile of the convergence map.
+    """
+    kappa = gaussian_filter(kappa, smoothing)
+    N_x, N_y = kappa.shape
+    ra_min, ra_max = boundaries['ra_min'], boundaries['ra_max']
+    dec_min, dec_max = boundaries['dec_min'], boundaries['dec_max']
+
+    
+    # Calculate number of pixels based on field size and resolution
+    npix_ra = int(np.ceil((ra_max - ra_min) * 60 / resolution))
+    npix_dec = int(np.ceil((dec_max - dec_min) * 60 / resolution))
+
+    ra_bins = np.linspace(ra_min, ra_max, npix_ra)
+    dec_bins = np.linspace(dec_min, dec_max, npix_dec)
+    
+    x_grid, y_grid = np.meshgrid(ra_bins, dec_bins)
+    r = np.sqrt((x_grid - center['ra_center'])**2 + (y_grid - center['dec_center'])**2)
+    #r = r[:,::-1]
+    
+#    if key == "x-y":
+#        r = r[:,::-1]
+#    elif key == "ra-dec":
+#        r = r
+#    else:
+#        raise ValueError("Unknown key, must be either 'x-y' or 'ra-dec'")
+    
+    
+    
+    if key == "x-y":
+        factor = factor_xy
+    elif key == "ra-dec":
+        factor = factor_ra_dec
+    else:
+        raise ValueError("Unknown key, must be either 'x-y' or 'ra-dec'")
+    
+    r_bins = np.linspace(0, r_max_arcmin * factor, num_bins + 1)  # Convert arcmin to pixel units
+    r_bin_centers = 0.5 * (r_bins[1:] + r_bins[:-1])
+    
+    # Initialize arrays for storing profiles and errors
+    profile_convergence = np.zeros(num_bins)
+    error_convergence = np.zeros(num_bins)
+    
+    for i in range(num_bins):
+        mask = (r >= r_bins[i]) & (r < r_bins[i + 1])
+    
+        # Convergence (κ) profile and error
+        values_kappa = kappa[mask]
+        #print(len(values_kappa))
+        profile_convergence[i] = values_kappa.mean()
+        error_convergence[i] = values_kappa.std() / np.sqrt(len(values_kappa))
+    
+
+    # Convert radial distances to angular units (arcmin)
+    r_bin_centers_arcmin = r_bin_centers /factor  # assuming each pixel is 0.3 arcmin
+    
+    return profile_convergence, error_convergence, r_bin_centers_arcmin
+
+def find_peaks(convergence, boundaries, smoothing=1.5, threshold=None):
+    """
+    Find peaks in the convergence map.
+    args:
+    - convergence_map: Convergence map.
+    - smoothing: Smoothing scale for the convergence map.
+    - threshold: Threshold for peak detection.
+    
+    returns:
+    - peaks: List of peak positions.
+    """
+    if smoothing is not None:
+        filtered_convergence = gaussian_filter(convergence, smoothing)
+    else:
+        filtered_convergence = convergence
+    
+    peaks = find_peaks2d(filtered_convergence[:,::-1], threshold=threshold, include_border=False) if threshold is not None else ([], [], [])
+    #print(peaks[2])
+    xcr = []
+    for x in peaks[1]:
+        xcr.append(filtered_convergence.shape[1] - x)
+    peaks = (peaks[0], xcr, peaks[2])    
+    ra_peaks = [boundaries['ra_min'] + (x) * (boundaries['ra_max'] - boundaries['ra_min']) / filtered_convergence.shape[1] for x in peaks[1]]
+    dec_peaks = [boundaries['dec_min'] + (y) * (boundaries['dec_max'] - boundaries['dec_min']) / filtered_convergence.shape[0] for y in peaks[0]]
+
+    #ra_peaks =  (boundaries['ra_max'] - ra_peaks[0]) + boundaries['ra_min']
+        
+    return ra_peaks, dec_peaks, peaks[2]
+
+def find_peaks_v2(convergence, boundaries, smoothing=1.5, threshold=None):
+    """
+    Find peaks in the convergence map.
+    args:
+    - convergence_map: Convergence map.
+    - smoothing: Smoothing scale for the convergence map.
+    - threshold: Threshold for peak detection.
+    
+    returns:
+    - peaks: List of peak positions.
+    """
+    # Apply smoothing if specified
+    if smoothing is not None:
+        filtered_convergence = gaussian_filter(convergence, smoothing)
+    else:
+        filtered_convergence = convergence
+    
+    # Determine the central 50% area
+    ny, nx = filtered_convergence.shape
+    x_start, x_end = nx // 4, 3 * nx // 4
+    y_start, y_end = ny // 4, 3 * ny // 4
+    
+    # Create a mask for the central 50% area
+    mask = np.zeros_like(filtered_convergence, dtype=bool)
+    mask[y_start:y_end, x_start:x_end] = True
+    
+    # Apply the mask: set values outside the central region to -inf
+    masked_convergence = np.where(mask, filtered_convergence, -np.inf)
+    
+    # Find the peak within the masked area
+    #peaks = np.where(masked_convergence[:,::-1] == np.max(masked_convergence))
+    #print(np.max(masked_convergence))
+    peaks = np.where(masked_convergence == np.max(masked_convergence))    
+    #print(peaks)
+    xcr = []
+    for x in peaks[1]:
+        xcr.append(filtered_convergence.shape[1] - x)
+    #peaks = (peaks[0], xcr)
+    heights = masked_convergence[peaks]
+    peaks = (peaks[0], peaks[1], heights)    
+    ra_peaks = [boundaries['ra_min'] + (x+0.5) * (boundaries['ra_max'] - boundaries['ra_min']) / filtered_convergence.shape[1] for x in peaks[1]]
+    dec_peaks = [boundaries['dec_min'] + (y+0.5) * (boundaries['dec_max'] - boundaries['dec_min']) / filtered_convergence.shape[0] for y in peaks[0]]
+
+    #ra_peaks =  (boundaries['ra_max'] - ra_peaks[0]) + boundaries['ra_min']
+        
+    return ra_peaks, dec_peaks, heights

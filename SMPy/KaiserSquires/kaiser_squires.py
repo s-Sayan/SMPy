@@ -1,11 +1,18 @@
 import numpy as np
 
-def ks_inversion(g1_grid, g2_grid):
+def ks_inversion(g1_grid, g2_grid, key="x-y"):
     """
     Perform the Kaiser-Squires inversion to obtain both E-mode and B-mode convergence maps from shear components.
     """
     # Get the dimensions of the input grids
     npix_dec, npix_ra = g1_grid.shape
+    
+    if key == "x-y":
+        g2_grid = g2_grid
+    elif key == "ra-dec":
+        g2_grid = -g2_grid
+    else:    
+        raise ValueError("Invalid key. Must be either 'x-y' or 'ra-dec'.")
 
     # Fourier transform the shear components
     g1_hat = np.fft.fft2(g1_grid)
