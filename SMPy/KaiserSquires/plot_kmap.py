@@ -359,9 +359,9 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
         for x in peaks[1]:
             xcr.append(filtered_convergence.shape[1] - x)
         peaks = (peaks[0], xcr, peaks[2])
-    else:
+    #else:
 #        peaks = find_peaks2d(filtered_convergence[:,::-1], threshold=threshold, include_border=False) if threshold is not None else ([], [], [])
-        peaks = ([x for x in peaks[0]], [y-1.0 for y in peaks[1]], peaks[2])
+    #    peaks = ([x for x in peaks[0]], [y-1.0 for y in peaks[1]], peaks[2])
     ra_peaks = [scaled_boundaries['ra_min'] + (x) * (scaled_boundaries['ra_max'] - scaled_boundaries['ra_min']) / filtered_convergence.shape[1] for x in peaks[1]]
     dec_peaks = [scaled_boundaries['dec_min'] + (y) * (scaled_boundaries['dec_max'] - scaled_boundaries['dec_min']) / filtered_convergence.shape[0] for y in peaks[0]]        
     if invert_map:
@@ -376,7 +376,7 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     )
     if threshold is not None:
         for ra, dec, peak_value in zip(ra_peaks, dec_peaks, peaks[2]):
-            ax.scatter(ra, dec, s=50, facecolors='none', edgecolors='g', linewidth=1.5, label='Convergence Peak = %f' % peak_value)
+            ax.scatter(ra, dec, s=50, facecolors='none', edgecolors='g', linewidth=1.5, label='Peak = %f' % peak_value)
         # To avoid multiple identical legend entries, we can add a single legend entry manually
         ax.legend(['Convergence Peaks'])
     extent = [scaled_boundaries['ra_max'], 
@@ -412,7 +412,7 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
 
     if ra_center is not None:
         if not invert_map:
-            ra_center =  (scaled_boundaries['ra_max'] - ra_center) + scaled_boundaries['ra_min']
+            ra_center =  (scaled_boundaries['ra_max'] - np.array(ra_center)) + scaled_boundaries['ra_min']
         ax.scatter(ra_center, dec_center, marker='x', color='lime', s=75, label='Nominal Cluster Center')
         #ax.axhline(y=dec_center, color='w', linestyle='--')
         #ax.axvline(x=ra_center, color='w', linestyle='--')
@@ -473,7 +473,7 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     fig.tight_layout() 
     #plt.show(block=True)
     #plt.show()
-    fig.savefig(config['output_path'])
+    fig.savefig(config['output_path']+"snr_Abell3411_b_annular_25_11.pdf")
     plt.close(fig)
     return ra_peaks, dec_peaks, peaks[2]
 

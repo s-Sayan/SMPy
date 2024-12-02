@@ -4,7 +4,7 @@
 #input_path: "/work/mccleary_group/superbit/mock-data-forecasting/forecast_lum/cl_m4.1e14_z0.45/r0/forecast_lum_annular.fits"
 
 input_path: "/Users/sayan/SuperBIT/Catalogs/Real_data/Abell3411_b_annular_25_11.fits"
-output_path: "../plots/snr_Abell3411_b_annular_25_11"
+output_path: "../plots/"
 
 # Export convergence as FITS?
 save_fits: false  # Set to false if you don't want to save as FITS

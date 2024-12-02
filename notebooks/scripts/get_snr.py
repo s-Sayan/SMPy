@@ -141,4 +141,5 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.xlim(0, 12)
     plt.tight_layout()
-    plt.savefig("../plots/SNR_multiple_kernels.png")
+    #plt.show(block=True)
+    plt.savefig(config['output_path']+"SNR_multiple_kernels.pdf")
