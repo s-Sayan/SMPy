@@ -19,7 +19,7 @@ vmin: -1                   # Min value for color scale in the plot
 threshold: 4.0
 num_sims: 1000
 seed_sims: 42
-shuffle_type: 'spatial'  # 'spatial' or 'orientation'
+shuffle_type: 'spatial'  # 'spatial' or 'rotation'
 
 kernels: [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
 gaussian_kernel: 1.5              # Gaussian kernel size for smoothing
