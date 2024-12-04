@@ -61,6 +61,8 @@ if __name__ == "__main__":
         config['x_col'], 
         config['y_col']
     )
+    
+    print(f"Loaded shear data from {config['input_path']}.")
 
     true_boundaries = utils.calculate_field_boundaries_v2(shear_df['ra'], shear_df['dec'])
     shear_df, ra_0, dec_0 = utils.correct_RA_dec(shear_df)
