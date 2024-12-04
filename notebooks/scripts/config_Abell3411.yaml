@@ -27,7 +27,9 @@ figsize: [10, 7]                  # Size of the figure (width, height)
 cmap: 'magma'                       # Colormap for the plot
 xlabel: 'Right Ascension (deg)'     # Label for x-axis
 ylabel: 'Declination (deg)'         # Label for y-axis
-plot_title: 'SNR map of Abell3411 '       # Title of the plot
+plot_title: 'SNR map: '       # Title of the plot
+cluster: 'Abell3411'
+band: 'b'
 gridlines: True                     # Add gridlines? (boolean)
 
 # Columns

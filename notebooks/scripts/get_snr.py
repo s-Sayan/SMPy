@@ -62,7 +62,7 @@ if __name__ == "__main__":
         config['y_col']
     )
     
-    print(f"Loaded shear data from {config['input_path']}.")
+    print(f"Loaded shear data from {config['input_path']}")
 
     true_boundaries = utils.calculate_field_boundaries_v2(shear_df['ra'], shear_df['dec'])
     shear_df, ra_0, dec_0 = utils.correct_RA_dec(shear_df)
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         true_boundaries, 
         config, 
         invert_map=False, 
-        title=config['plot_title'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
+        title=config['plot_title']+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
         vmax=config['vmax'], 
         threshold=config['threshold']
     )
