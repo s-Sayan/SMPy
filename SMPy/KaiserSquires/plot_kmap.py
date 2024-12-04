@@ -376,9 +376,15 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     )
     if threshold is not None:
         for ra, dec, peak_value in zip(ra_peaks, dec_peaks, peaks[2]):
-            ax.scatter(ra, dec, s=50, facecolors='none', edgecolors='g', linewidth=1.5, label='Peak = %f' % peak_value)
-        # To avoid multiple identical legend entries, we can add a single legend entry manually
-        ax.legend(['Convergence Peaks'])
+            ax.scatter(ra, dec, s=50, facecolors='none', edgecolors='g', linewidth=1.5)
+            ax.text(
+            ra - 0.002, dec + 0.002,  # Adjust these offsets as needed
+            f"{peak_value:.2f}",
+            color='green',
+            fontsize=10,
+            ha='left',
+            va='bottom'
+        )
     extent = [scaled_boundaries['ra_max'], 
                 scaled_boundaries['ra_min'], 
                 scaled_boundaries['dec_min'], 
@@ -455,7 +461,7 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     ax.set_xlabel(config['xlabel'])
     ax.set_ylabel(config['ylabel'])
     ax.set_title(title)
-    ax.legend(loc='upper left')
+    #ax.legend(loc='upper left')
 
     # Is there a better way to force something to be a boolean?
     if config['gridlines'] == True:
@@ -471,9 +477,9 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
 
     # Save to file and exit, redoing tight_layout b/c sometimes figure gets cut off 
     fig.tight_layout() 
-    #plt.show(block=True)
+    plt.show(block=True)
     #plt.show()
-    fig.savefig(config['output_path']+"snr_Abell3411_b_annular_25_11.pdf")
+    #fig.savefig(config['output_path']+"snr_Abell3411_b_annular_25_11.pdf")
     plt.close(fig)
     return ra_peaks, dec_peaks, peaks[2]
 

@@ -81,6 +81,13 @@ if __name__ == "__main__":
     )
 
     og_kappa_e_2, og_kappa_b_2 = kaiser_squires.ks_inversion(g1map_og_2, g2map_og_2)
+    
+    if config["shuffle_type"] == "rotation":
+        shuffled_dfs = utilsv2.generate_multiple_shear_dfs(shear_df, config['num_sims'], seed=config['seed_sims'])
+    elif config["shuffle_type"] == "spatial":
+        shuffled_dfs = utils.generate_multiple_shear_dfs(shear_df, config['num_sims'], seed=config['seed_sims'])
+    else:
+        KeyError("Invalid shuffle type. Must be either 'rotation' or 'spatial'.")
 
     shuffled_dfs = utilsv2.generate_multiple_shear_dfs(shear_df, config['num_sims'], seed=config['seed_sims'])
     g1_g2_map_list_xy = utils.shear_grids_for_shuffled_dfs_xy(shuffled_dfs, resolution_xy)
@@ -141,5 +148,5 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.xlim(0, 12)
     plt.tight_layout()
-    #plt.show(block=True)
-    plt.savefig(config['output_path']+"SNR_multiple_kernels.pdf")
+    plt.show(block=True)
+    #plt.savefig(config['output_path']+"SNR_multiple_kernels.pdf")
