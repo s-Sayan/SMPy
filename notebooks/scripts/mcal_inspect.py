@@ -93,20 +93,20 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
 
     # Histogram for r11
-    axs[0].hist(shear_df1['r11'], bins=50, alpha=0.5, label='First mcal data', color='blue')
-    axs[0].hist(shear_df2['r11'], bins=50, alpha=0.5, label='Second mcal data', color='orange')
+    axs[0].hist(shear_df1['r11'], bins="auto", alpha=0.5, label='First mcal data', color='blue')
+    axs[0].hist(shear_df2['r11'], bins="auto", alpha=0.5, label='Second mcal data', color='orange')
     axs[0].set_title('Histogram of r11')
     axs[0].set_xlabel('r11')
-    axs[0].set_xlim(-2, 2)  # Set x-axis limits
+    axs[0].set_xlim(-3, 3)  # Set x-axis limits
     axs[0].set_ylabel('Frequency')
     axs[0].legend()
 
     # Histogram for r22
-    axs[1].hist(shear_df1['r22'], bins=50, alpha=0.5, label='First mcal data', color='green')
-    axs[1].hist(shear_df2['r22'], bins=50, alpha=0.5, label='Second mcal data', color='red')
+    axs[1].hist(shear_df1['r22'], bins="auto", alpha=0.5, label='First mcal data', color='green')
+    axs[1].hist(shear_df2['r22'], bins="auto", alpha=0.5, label='Second mcal data', color='red')
     axs[1].set_title('Histogram of r22')
     axs[1].set_xlabel('r22')
-    axs[0].set_xlim(-2, 2)  # Set x-axis limits
+    axs[1].set_xlim(-3, 3)  # Set x-axis limits
     axs[1].legend()
 
     # Adjust layout and save the figure
