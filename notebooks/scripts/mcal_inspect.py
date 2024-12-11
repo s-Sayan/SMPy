@@ -87,6 +87,9 @@ if __name__ == "__main__":
     plt.xlabel('x')
     plt.ylabel('y')
     plt.title('Scatter Plot of x and y')
+    # Adjust layout and save the figure
+    plt.tight_layout()
+    plt.savefig('scatter_x_y.pdf')
     plt.show()
     
     # Create histograms for r11 and r22 in subplots
