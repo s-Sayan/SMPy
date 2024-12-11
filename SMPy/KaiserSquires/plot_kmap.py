@@ -478,8 +478,8 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     # Save to file and exit, redoing tight_layout b/c sometimes figure gets cut off 
     fig.tight_layout() 
     #plt.show(block=True)
-    #plt.show()
-    fig.savefig(config['output_path']+"snr_"+config['cluster']+"_"+config['band']+".pdf")
+    plt.show()
+#    fig.savefig(config['output_path']+"snr_"+config['cluster']+"_"+config['band']+".pdf")
     plt.close(fig)
     return ra_peaks, dec_peaks, peaks[2]
 
