@@ -89,7 +89,7 @@ if __name__ == "__main__":
     plt.title('Scatter Plot of x and y')
     # Adjust layout and save the figure
     plt.tight_layout()
-    plt.savefig('scatter_x_y.png')
+    plt.savefig('scatter_x_y.pdf', format='pdf', bbox_inches='tight', dpi=300)
     plt.show()
     
     # Create histograms for r11 and r22 in subplots
@@ -114,5 +114,5 @@ if __name__ == "__main__":
 
     # Adjust layout and save the figure
     plt.tight_layout()
-    plt.savefig('histogram_r11_r22.pdf')
+    plt.savefig('histogram_r11_r22.pdf', format='pdf', bbox_inches='tight', dpi=300)
     plt.show()
