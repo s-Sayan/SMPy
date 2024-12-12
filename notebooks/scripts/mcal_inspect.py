@@ -81,8 +81,8 @@ if __name__ == "__main__":
     print(f"Mean r22: {np.mean(shear_df2['r22'])}")
     
     # Scatter plot of x, y from the two files
-    plt.scatter(shear_df1['x'], shear_df1['y'], s=2, label='First mcal data', alpha=0.5)
-    plt.scatter(shear_df2['x'], shear_df2['y'], s=2,  label='Second mcal data', alpha=0.5)
+    plt.scatter(shear_df1['x'], shear_df1['y'], s=1, label='First mcal data', alpha=0.5)
+    plt.scatter(shear_df2['x'], shear_df2['y'], s=1,  label='Second mcal data', alpha=0.5)
     plt.legend()
     plt.xlabel('x')
     plt.ylabel('y')
