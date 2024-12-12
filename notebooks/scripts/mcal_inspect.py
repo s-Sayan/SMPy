@@ -85,6 +85,8 @@ if __name__ == "__main__":
     shear_df2 = shear_df2.astype(shear_df2['r11'].dtype.newbyteorder('='))
     print(f"Loaded first mcal data from {config['input_path1']}")
     print(f"Loaded second mcal data from {config['input_path2']}")
+    shear_df1['x'], shear_df1['y'] = shear_df1['ra'], shear_df1['dec']
+    shear_df2['x'], shear_df2['y'] = shear_df2['ra'], shear_df2['dec']
 
     # Print means
     print("==== First mcal file ====")
