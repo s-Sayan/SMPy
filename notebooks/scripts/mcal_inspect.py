@@ -122,7 +122,7 @@ if __name__ == "__main__":
     plt.show()
 
     # Scatter plot of x, y from the two files
-    plt.scatter(shear_df1['x'], shear_df1['y'], s=1, label='First mcal data', alpha=0.5)
+    '''plt.scatter(shear_df1['x'], shear_df1['y'], s=1, label='First mcal data', alpha=0.5)
     plt.scatter(shear_df2['x'], shear_df2['y'], s=1, label='Second mcal data', alpha=0.5)
     plt.legend()
     plt.xlabel('x')
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     plt.title('Scatter Plot of x and y')
     plt.tight_layout()
     plt.savefig('scatter_x_y.pdf', format='pdf', bbox_inches='tight', dpi=300)
-    plt.show()
+    plt.show()'''
 
     # Create histograms for r11 and r22 in subplots
     fig, axs = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
