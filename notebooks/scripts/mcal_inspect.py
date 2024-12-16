@@ -23,7 +23,7 @@ def parse_arguments():
     return parser.parse_args()
 
 # Function to load shear data
-def load_shear_data(shear_cat_path, ra_col, dec_col, x_col, y_col, r11, r22, r12, r21):
+def load_shear_data(shear_cat_path, ra_col, dec_col, x_col, y_col, r11, r22, r12, r21, gpsf):
     """Load shear data from a FITS file and return a pandas DataFrame."""
     shear_catalog = Table.read(shear_cat_path)
     shear_df = pd.DataFrame({
@@ -35,6 +35,7 @@ def load_shear_data(shear_cat_path, ra_col, dec_col, x_col, y_col, r11, r22, r12
         'r22': shear_catalog[r22],
         'r12': shear_catalog[r12],
         'r21': shear_catalog[r21],
+        'gpsf': shear_catalog[gpsf],
     })
     return shear_df
 
@@ -66,7 +67,8 @@ if __name__ == "__main__":
         config['r11'],
         config['r22'],
         config['r12'],
-        config['r21']
+        config['r21'],
+        config['gpsf']
     )
     shear_df2 = load_shear_data(
         config['input_path2'], 
@@ -77,7 +79,8 @@ if __name__ == "__main__":
         config['r11'],
         config['r22'],
         config['r12'],
-        config['r21']
+        config['r21'],
+        config['gpsf']
     )
 
     # Ensure byte order compatibility
@@ -90,9 +93,11 @@ if __name__ == "__main__":
 
     # Print means
     print("==== First mcal file ====")
+    print(f"Number of objects: {len(shear_df1['r11'])}")
     print(f"Mean r11: {np.mean(shear_df1['r11'])}")
     print(f"Mean r22: {np.mean(shear_df1['r22'])}")
     print("==== Second mcal file ====")
+    print(f"Number of objects: {len(shear_df2['r11'])}")
     print(f"Mean r11: {np.mean(shear_df2['r11'])}")
     print(f"Mean r22: {np.mean(shear_df2['r22'])}")
 
@@ -110,11 +115,7 @@ if __name__ == "__main__":
     plt.figure(figsize=(8, 6))
     plt.scatter(shear_df1['x'], shear_df1['y'], s=1, label='First mcal data', alpha=0.5)
     plt.scatter(shear_df2['x'], shear_df2['y'], s=1, label='Second mcal data', alpha=0.5)
-    plt.scatter(
-        shear_df2.iloc[mismatched_indices]['x'],
-        shear_df2.iloc[mismatched_indices]['y'],
-        s=10, color='red', label='Mismatched Points'
-    )
+    #plt.scatter(shear_df2.iloc[mismatched_indices]['x'], shear_df2.iloc[mismatched_indices]['y'],s=10,color='red', label='Mismatched Points')
     plt.legend()
     plt.xlabel('x')
     plt.ylabel('y')
@@ -157,4 +158,51 @@ if __name__ == "__main__":
     # Adjust layout and save the figure
     plt.tight_layout()
     plt.savefig('histogram_r11_r22.pdf', format='pdf', bbox_inches='tight', dpi=300)
+    plt.show()
+    
+    #Create a 2D histogram of gpsf
+    # Assuming gpsf is a 2D array-like structure within shear_df1 and shear_df2
+    # Extracting the two dimensions of gpsf
+    x1, y1 = shear_df1['gpsf'][:, 0], shear_df1['gpsf'][:, 1]
+    x2, y2 = shear_df2['gpsf'][:, 0], shear_df2['gpsf'][:, 1]
+
+    # Dynamically determine bin sizes based on the data range
+    nbins = 50  # Adjust as needed
+    x_min = min(x1.min(), x2.min())
+    x_max = max(x1.max(), x2.max())
+    y_min = min(y1.min(), y2.min())
+    y_max = max(y1.max(), y2.max())
+
+    x_bins = np.linspace(x_min, x_max, nbins)
+    y_bins = np.linspace(y_min, y_max, nbins)
+
+    # Compute 2D histograms
+    H1, xedges1, yedges1 = np.histogram2d(x1, y1, bins=[x_bins, y_bins])
+    H2, xedges2, yedges2 = np.histogram2d(x2, y2, bins=[x_bins, y_bins])
+
+    # Create the contour plot
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    # Plot contours for shear_df1
+    X1, Y1 = np.meshgrid(xedges1[:-1], yedges1[:-1])
+    contour1 = ax.contour(X1, Y1, H1.T, levels=10, cmap='Blues', linewidths=1.5)
+    ax.clabel(contour1, inline=True, fontsize=8, fmt='%.0f')
+
+    # Plot contours for shear_df2
+    X2, Y2 = np.meshgrid(xedges2[:-1], yedges2[:-1])
+    contour2 = ax.contour(X2, Y2, H2.T, levels=10, cmap='Reds', linewidths=1.5)
+    ax.clabel(contour2, inline=True, fontsize=8, fmt='%.0f')
+
+    # Add labels and legend
+    ax.set_title("Contour Plot of gpsf for shear_df1 and shear_df2")
+    ax.set_xlabel("gpsf Dimension 1")
+    ax.set_ylabel("gpsf Dimension 2")
+    ax.legend(
+        [contour1.collections[0], contour2.collections[0]],
+        ["shear_df1", "shear_df2"],
+        loc="upper right"
+    )
+
+    # Display the plot
+    plt.tight_layout()
     plt.show()
