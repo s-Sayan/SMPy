@@ -90,10 +90,17 @@ var_g2_g = matched_data_g['g_cov_noshear'][:, 1, 1]
 w_b = matched_data_b['weight']
 w_g = matched_data_g['weight']
 
-# Calculate the combined weight
+# Calculate the combined weight and variances
 numerator = w_b**2 * (var_g1_b + var_g2_b) + w_g**2 * (var_g1_g + var_g2_g)
 denominator = w_b**2 + w_g**2
-combined_weight1 = 1 / (0.26 + numerator / denominator)
+var_g1 = (w_b**2 * var_g1_b + w_g**2 * var_g1_g) / denominator
+var_g2 = (w_b**2 * var_g2_b + w_g**2 * var_g2_g) / denominator
+combined_weight1 = 1 / (0.26 + var_g1 + var_g2)
+
+# Compute combined no_cov_shear
+no_cov_shear = np.zeros((len(var_g1), 2, 2))
+no_cov_shear[:, 0, 0] = var_g1
+no_cov_shear[:, 1, 1] = var_g2
 
 # Add combined data to the table
 combined_data = Table()
@@ -101,9 +108,10 @@ combined_data['ra'] = matched_data_b['ra']
 combined_data['dec'] = matched_data_b['dec']
 combined_data['X_IMAGE'] = matched_data_b['X_IMAGE']
 combined_data['Y_IMAGE'] = matched_data_b['Y_IMAGE']
-combined_data['g1'] = g1_avg
-combined_data['g2'] = g2_avg
+combined_data['g1_Rinv'] = g1_avg
+combined_data['g2_Rinv'] = g2_avg
 combined_data['weight'] = combined_weight1
+combined_data['g_cov_noshear'] = no_cov_shear
 
 # Save the combined data to a new FITS file
 combined_data.write(output_file, format='fits', overwrite=True)

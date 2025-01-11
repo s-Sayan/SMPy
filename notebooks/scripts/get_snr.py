@@ -69,7 +69,10 @@ if __name__ == "__main__":
     boundaries = utils.calculate_field_boundaries_v2(shear_df['ra'], shear_df['dec'])
     boundaries_xy = utils.calculate_field_boundaries_v2(shear_df['x'], shear_df['y'])
 
-    center_cl = correct_center(config["center"], ra_0, dec_0)
+    if config['center'] is not None:
+        center_cl = correct_center(config["center"], ra_0, dec_0)
+    else:
+        center_cl = None
 
     x_factor, y_factor = (
         (np.max(shear_df['x']) - np.min(shear_df['x'])) / (np.max(shear_df['ra']) - np.min(shear_df['ra'])), 
@@ -114,7 +117,8 @@ if __name__ == "__main__":
         invert_map=False, 
         title=config['plot_title']+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
         vmax=config['vmax'], 
-        threshold=config['threshold']
+        threshold=config['threshold'],
+        center_cl=center_cl
     )
     x_c, y_c, hx = utils.find_peaks_v2(og_kappa_e_2, boundaries_xy, smoothing=kernel, threshold=0.11)
     center_cl_xy = {'ra_center': x_c, 'dec_center': y_c }

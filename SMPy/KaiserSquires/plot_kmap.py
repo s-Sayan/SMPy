@@ -417,9 +417,9 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
         ra_center = dec_center = None
 
     if ra_center is not None:
-        if not invert_map:
+        if invert_map:
             ra_center =  (scaled_boundaries['ra_max'] - np.array(ra_center)) + scaled_boundaries['ra_min']
-        ax.scatter(ra_center, dec_center, marker='x', color='lime', s=75, label='Nominal Cluster Center')
+        ax.scatter(ra_center, dec_center, marker='x', color='lime', s=50, label='Nominal Cluster Center')
         #ax.axhline(y=dec_center, color='w', linestyle='--')
         #ax.axvline(x=ra_center, color='w', linestyle='--')
         
