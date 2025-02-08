@@ -295,7 +295,7 @@ def plot_convergence_v3(convergence, boundaries, config, output_name="Converenge
     #fig.savefig(config['output_path'])
     plt.close(fig)
 
-def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,  output_name="Converenge map", center_cl=None, smoothing=None, invert_map=True, vmax=None, vmin=None, title=None, threshold = None, con_peaks=None):
+def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,  output_name="Converenge map", center_cl=None, smoothing=None, invert_map=True, vmax=None, vmin=None, title=None, threshold = None, con_peaks=None, save_path="output.png"):
     """
     Make plot of convergence map and save to file using information passed
     in run configuration file. 
@@ -479,7 +479,7 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     fig.tight_layout() 
     #plt.show(block=True)
 #    plt.show()
-    fig.savefig(config['output_path']+"snr_"+config['cluster']+"_"+config['band']+".pdf")
+    fig.savefig(save_path)
     plt.close(fig)
     return ra_peaks, dec_peaks, peaks[2]
 

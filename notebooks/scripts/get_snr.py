@@ -22,6 +22,8 @@ def parse_arguments():
         required=True,
         help="Path to the YAML configuration file."
     )
+    parser.add_argument('--plot_kappa', action='store_true', help='Flag to plot convergence map')
+    parser.add_argument('--plot_error', action='store_true', help='Flag to plot the std map')
     return parser.parse_args()
 
 # Function to load shear data
@@ -86,6 +88,23 @@ if __name__ == "__main__":
     )
 
     og_kappa_e_2, og_kappa_b_2 = kaiser_squires.ks_inversion(g1map_og_2, g2map_og_2)
+    kernel = config['gaussian_kernel']
+    og_kappa_e_2_smoothed = gaussian_filter(og_kappa_e_2, kernel)
+
+
+    if args.plot_kappa:
+        plot_kmap.plot_convergence_v4(
+            og_kappa_e_2_smoothed, 
+            boundaries, 
+            true_boundaries, 
+            config, 
+            invert_map=False, 
+            title="Convergence: "+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
+            #vmax=config['vmax'], 
+            #threshold=config['threshold'],
+            center_cl=center_cl,
+            save_path=config['output_path']+"kappa_"+config['cluster']+"_"+config['band']+".png"
+        )
     
     if config["shuffle_type"] == "rotation":
         shuffled_dfs = utilsv2.generate_multiple_shear_dfs(shear_df, config['num_sims'], seed=config['seed_sims'])
@@ -98,8 +117,6 @@ if __name__ == "__main__":
     g1_g2_map_list_xy = utils.shear_grids_for_shuffled_dfs_xy(shuffled_dfs, resolution_xy)
     shuff_kappa_e_list_xy, shuff_kappa_b_list_xy = utils.ks_inversion_list(g1_g2_map_list_xy, 'xy')
 
-    kernel = config['gaussian_kernel']
-
     kappa_e_stack_xy = np.stack(shuff_kappa_e_list_xy, axis=0)
     kappa_e_stack_smoothed_xy = np.zeros_like(kappa_e_stack_xy)
     for i in range(kappa_e_stack_xy.shape[0]):
@@ -107,6 +124,19 @@ if __name__ == "__main__":
     
     std_xy = np.std(kappa_e_stack_smoothed_xy, axis=0)
     snr_xy = gaussian_filter(og_kappa_e_2, kernel) / std_xy
+    if args.plot_error:
+        plot_kmap.plot_convergence_v4(
+            std_xy,
+            boundaries,
+            true_boundaries,
+            config,
+            invert_map=False,
+            title="Error: "+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
+            #vmax=config['vmax'],
+            #threshold=config['threshold'],
+            center_cl=center_cl,
+            save_path=config['output_path']+"error_"+config['cluster']+"_"+config['band']+".png"
+        )
 
     # Plotting SNR map
     plot_kmap.plot_convergence_v4(
@@ -118,7 +148,8 @@ if __name__ == "__main__":
         title=config['plot_title']+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
         vmax=config['vmax'], 
         threshold=config['threshold'],
-        center_cl=center_cl
+        center_cl=center_cl,
+        save_path=config['output_path']+"snr_"+config['cluster']+"_"+config['band']+".png"
     )
     x_c, y_c, hx = utils.find_peaks_v2(og_kappa_e_2, boundaries_xy, smoothing=kernel, threshold=0.11)
     center_cl_xy = {'ra_center': x_c, 'dec_center': y_c }
