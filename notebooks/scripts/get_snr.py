@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 import pandas as pd
 from astropy.table import Table
+from astropy.io import fits
 import yaml
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
@@ -16,14 +17,10 @@ def read_config(file_path):
 # Command-line argument parser
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Process a shear catalog and compute the SNR map.")
-    parser.add_argument(
-        '-c', '--config',
-        type=str,
-        required=True,
-        help="Path to the YAML configuration file."
-    )
+    parser.add_argument('-c', '--config', type=str, required=True, help="Path to the YAML configuration file.")
     parser.add_argument('--plot_kappa', action='store_true', help='Flag to plot convergence map')
     parser.add_argument('--plot_error', action='store_true', help='Flag to plot the std map')
+    parser.add_argument('--save_fits', action='store_true', help='Flag to save the convergence map as a FITS file')  # New flag
     return parser.parse_args()
 
 # Function to load shear data
@@ -46,6 +43,43 @@ def correct_center(center_cl, ra_0, dec_0):
     center_c["ra_center"] = (center_cl["ra_center"] - ra_0) * np.cos(np.deg2rad(center_cl["dec_center"]))
     center_c["dec_center"] = center_cl["dec_center"] - dec_0
     return center_c
+
+# Function to save a FITS file
+def save_fits(data, true_boundaries, filename):
+    """
+    Save a 2D array as a FITS file with proper WCS information.
+
+    - data: 2D numpy array containing the map.
+    - true_boundaries: Dictionary with 'ra_min', 'ra_max', 'dec_min', 'dec_max'.
+    - filename: Output filename.
+    """
+    hdu = fits.PrimaryHDU(data)
+    header = hdu.header
+
+    ny, nx = data.shape
+    ra_min, ra_max = true_boundaries['ra_min'], true_boundaries['ra_max']
+    dec_min, dec_max = true_boundaries['dec_min'], true_boundaries['dec_max']
+
+    pixel_scale_ra = (ra_max - ra_min) / nx
+    pixel_scale_dec = (dec_max - dec_min) / ny
+
+    header["CTYPE1"] = "RA---TAN"
+    header["CUNIT1"] = "deg"
+    header["CRVAL1"] = (ra_max + ra_min) / 2
+    header["CRPIX1"] = nx / 2
+    header["CD1_1"]  = -pixel_scale_ra
+    header["CD1_2"]  = 0.0
+
+    header["CTYPE2"] = "DEC--TAN"
+    header["CUNIT2"] = "deg"
+    header["CRVAL2"] = (dec_max + dec_min) / 2
+    header["CRPIX2"] = ny / 2
+    header["CD2_1"]  = 0.0
+    header["CD2_2"]  = pixel_scale_dec
+
+    hdu.writeto(filename, overwrite=True)
+    print(f"Saved FITS file: {filename}")
+
 
 # Main script logic
 if __name__ == "__main__":
@@ -100,11 +134,15 @@ if __name__ == "__main__":
             config, 
             invert_map=False, 
             title="Convergence: "+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
-            #vmax=config['vmax'], 
+            #vmax= 0.085,
+            #vmin= -0.085, 
             #threshold=config['threshold'],
             center_cl=center_cl,
             save_path=config['output_path']+"kappa_"+config['cluster']+"_"+config['band']+".png"
         )
+    if args.save_fits:
+        fits_filename = config['output_path'] + f"kappa_{config['cluster']}_{config['band']}.fits"
+        save_fits(og_kappa_e_2_smoothed, true_boundaries, fits_filename)
     
     if config["shuffle_type"] == "rotation":
         shuffled_dfs = utilsv2.generate_multiple_shear_dfs(shear_df, config['num_sims'], seed=config['seed_sims'])
@@ -151,7 +189,7 @@ if __name__ == "__main__":
         center_cl=center_cl,
         save_path=config['output_path']+"snr_"+config['cluster']+"_"+config['band']+".png"
     )
-    x_c, y_c, hx = utils.find_peaks_v2(og_kappa_e_2, boundaries_xy, smoothing=kernel, threshold=0.11)
+    '''x_c, y_c, hx = utils.find_peaks_v2(og_kappa_e_2, boundaries_xy, smoothing=kernel, threshold=0.11)
     center_cl_xy = {'ra_center': x_c, 'dec_center': y_c }
 
     # Radial profiles for different kernels
@@ -186,4 +224,4 @@ if __name__ == "__main__":
     plt.xlim(0, 12)
     plt.tight_layout()
     #plt.show(block=True)
-    plt.savefig(config['output_path']+"SNR_multiple_kernels.pdf")
+    plt.savefig(config['output_path']+"SNR_multiple_kernels.pdf")'''

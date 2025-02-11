@@ -479,7 +479,7 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     fig.tight_layout() 
     #plt.show(block=True)
 #    plt.show()
-    fig.savefig(save_path)
+    fig.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close(fig)
     return ra_peaks, dec_peaks, peaks[2]
 
