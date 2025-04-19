@@ -205,7 +205,7 @@ def create_shear_grid_v2(ra, dec, g1, g2, resolution, weight=None, boundaries = 
         ra_min, ra_max = np.min(ra), np.max(ra)
         dec_min, dec_max = np.min(dec), np.max(dec)
         
-    if weight is None:
+    if weight[0] is None:
         weight = np.ones_like(ra)
     #print(ra_min, ra_max, dec_min, dec_max)
     # Calculate number of pixels based on field size and resolution
@@ -230,6 +230,42 @@ def create_shear_grid_v2(ra, dec, g1, g2, resolution, weight=None, boundaries = 
                                            ybins[1] - ybins[0]))
         
     return result
+
+def create_count_grid(ra, dec, resolution, boundaries=None, verbose=False):
+    '''
+    Create a grid of galaxy counts by binning galaxy positions into pixels.
+
+    Args:
+    - ra, dec: numpy arrays of the same length containing the galaxy positions.
+    - resolution: Resolution of the map in arcminutes.
+    - boundaries: Dictionary containing 'ra_min', 'ra_max', 'dec_min', 'dec_max' (optional).
+    - verbose: If True, print details of the binning.
+
+    Returns:
+    - A 2D numpy array containing the binned galaxy counts.
+    '''
+    
+    if boundaries is not None:
+        ra_min, ra_max = boundaries['ra_min'], boundaries['ra_max']
+        dec_min, dec_max = boundaries['dec_min'], boundaries['dec_max']
+    else:
+        ra_min, ra_max = np.min(ra), np.max(ra)
+        dec_min, dec_max = np.min(dec), np.max(dec)
+    
+    # Calculate number of pixels based on field size and resolution
+    npix_ra = int(np.ceil((ra_max - ra_min) * 60 / resolution))
+    npix_dec = int(np.ceil((dec_max - dec_min) * 60 / resolution))
+    
+    # Compute the 2D histogram (count map)
+    count_grid, xbins, ybins = np.histogram2d(ra, dec, bins=[npix_ra, npix_dec], range=[[ra_min, ra_max], [dec_min, dec_max]])
+
+    if verbose:
+        print("npix : {}".format([npix_ra, npix_dec]))
+        print("extent : {}".format([xbins[0], xbins[-1], ybins[0], ybins[-1]]))
+        print("(dx, dy) : ({}, {})".format(xbins[1] - xbins[0],
+                                           ybins[1] - ybins[0]))
+    
+    return count_grid.T  # Transposing to match the expected orientation
 
 
 def save_convergence_fits(convergence, boundaries, config, output_name):

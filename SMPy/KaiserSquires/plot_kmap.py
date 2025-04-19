@@ -295,7 +295,7 @@ def plot_convergence_v3(convergence, boundaries, config, output_name="Converenge
     #fig.savefig(config['output_path'])
     plt.close(fig)
 
-def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,  output_name="Converenge map", center_cl=None, smoothing=None, invert_map=True, vmax=None, vmin=None, title=None, threshold = None, con_peaks=None, save_path="output.png"):
+def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,  output_name="Converenge map", center_cl=None, smoothing=None, invert_map=True, vmax=None, vmin=None, title=None, threshold = None, con_peaks=None, box_boundary=None, save_path="output.png"):
     """
     Make plot of convergence map and save to file using information passed
     in run configuration file. 
@@ -419,12 +419,18 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     if ra_center is not None:
         if invert_map:
             ra_center =  (scaled_boundaries['ra_max'] - np.array(ra_center)) + scaled_boundaries['ra_min']
-        ax.scatter(ra_center, dec_center, marker='x', color='lime', s=50, label='Nominal Cluster Center')
+        ax.scatter(ra_center, dec_center, marker='x', color='lime', s=50, label='X-ray Center')
         #ax.axhline(y=dec_center, color='w', linestyle='--')
         #ax.axvline(x=ra_center, color='w', linestyle='--')
         
-
-
+    if box_boundary is not None:
+        ra_box_max = box_boundary['ra_max']
+        ra_box_min = box_boundary['ra_min']
+        dec_box_max = box_boundary['dec_max']
+        dec_box_min = box_boundary['dec_min']
+        ra_corners = [ra_box_min, ra_box_max, ra_box_max, ra_box_min, ra_box_min]
+        dec_corners = [dec_box_min, dec_box_min, dec_box_max, dec_box_max, dec_box_min]
+        ax.plot(ra_corners, dec_corners, color='w', linestyle='--', linewidth=2, label="SuperBIT FOV")
 
 
     # Determine nice step sizes based on the range
@@ -461,7 +467,7 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     ax.set_xlabel(config['xlabel'])
     ax.set_ylabel(config['ylabel'])
     ax.set_title(title)
-    #ax.legend(loc='upper left')
+    ax.legend(loc='upper left')
 
     # Is there a better way to force something to be a boolean?
     if config['gridlines'] == True:
