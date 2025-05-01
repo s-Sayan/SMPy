@@ -223,6 +223,7 @@ if __name__ == "__main__":
             invert_map=False, 
             title=config['plot_title']+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
             vmax=config['vmax'], 
+            vmin=config['vmin'],
             threshold=config['threshold'],
             center_cl=center_cl,
             save_path=config['output_path']+"snr_"+config['cluster']+"_"+config['band']+".png"
@@ -244,6 +245,7 @@ if __name__ == "__main__":
             invert_map=False, 
             title=config['plot_title']+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
             vmax=config['vmax'], 
+            vmin=config['vmin'],
             threshold=config['threshold'],
             center_cl=center_cl,
             save_path=config['output_path']+"snr_"+config['cluster']+"_"+config['band']+".png"
