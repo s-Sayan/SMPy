@@ -1,0 +1,41 @@
+# YAML File for SMPy/KaiserSquires/run.py  
+
+cluster: Abell3411
+band: b
+
+# Paths
+input_path: /work/mccleary_group/saha/data/Abell3411/b/out/Abell3411_b_annular_combined.fits
+output_path: ./
+
+# Parameters
+resolution: 0.61
+gaussian_kernel: 1.5
+vmax: 4.0
+vmin: -4.0
+kmap_vmax: 0.1
+kmap_vmin: -0.1
+threshold: 2.5
+num_sims: 1000
+seed_sims: 12000
+shuffle_type: rotation     # 'spatial' or 'rotation'
+kernels: [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+
+#Plotting
+figsize: [10, 7]
+cmap: magma
+xlabel: Right Ascension (deg)
+ylabel: Declination (deg)
+plot_title: 'SNR map: '
+gridlines: true
+ra_col: ra
+dec_col: dec
+g1_col: g1_Rinv
+g2_col: g2_Rinv
+weight_col: weight
+x_col: X_IMAGE
+y_col: Y_IMAGE
+center: {ra_center: 130.4488, dec_center: -17.4795}
+#center: None
+mode: [E]
+box_boundary:
+gridding: xy 
