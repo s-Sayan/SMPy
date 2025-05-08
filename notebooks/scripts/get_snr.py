@@ -144,6 +144,10 @@ if __name__ == "__main__":
         g1map_og_2, g2map_og_2 = utils.create_shear_grid_v2(
             shear_df['x'], shear_df['y'], shear_df['g1'], shear_df['g2'], resolution_xy, shear_df['weight'], verbose=True
         )
+        fits_filename = config['output_path'] + f"g1_{config['cluster']}_{config['band']}.fits"
+        save_fits(g1map_og_2, true_boundaries, fits_filename)
+        fits_filename = config['output_path'] + f"g2_{config['cluster']}_{config['band']}.fits"
+        save_fits(g2map_og_2, true_boundaries, fits_filename)
         og_kappa_e_2, og_kappa_b_2 = kaiser_squires.ks_inversion(g1map_og_2, g2map_og_2, key='x-y')
     elif config["gridding"] == "ra_dec":
         g1map_og_2, g2map_og_2 = utils.create_shear_grid_v2(
@@ -157,6 +161,7 @@ if __name__ == "__main__":
     
     kernel = config['gaussian_kernel']
     og_kappa_e_2_smoothed = gaussian_filter(og_kappa_e_2, kernel)
+    og_kappa_b_2_smoothed = gaussian_filter(og_kappa_b_2, kernel)
 
 
     if args.plot_kappa:
@@ -174,12 +179,30 @@ if __name__ == "__main__":
             box_boundary=box_boundary,
             save_path=config['output_path']+"kappa_"+config['cluster']+"_"+config['band']+".png"
         )
+        plot_kmap.plot_convergence_v4(
+            og_kappa_b_2_smoothed, 
+            boundaries, 
+            true_boundaries, 
+            config, 
+            invert_map=False, 
+            title="Convergence (b_modes): "+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
+            vmax= config['kmap_vmax'],
+            vmin= config['kmap_vmin'], 
+            #threshold=config['threshold'],
+            center_cl=center_cl,
+            box_boundary=box_boundary,
+            save_path=config['output_path']+"kappa_b_"+config['cluster']+"_"+config['band']+".png"
+        )        
     if args.save_fits:
         fits_filename = config['output_path'] + f"kappa_{config['cluster']}_{config['band']}.fits"
         save_fits(og_kappa_e_2_smoothed, true_boundaries, fits_filename)
+        fits_filename = config['output_path'] + f"kappa_b_{config['cluster']}_{config['band']}.fits"
+        save_fits(og_kappa_b_2_smoothed, true_boundaries, fits_filename)
         count_grid = utils.create_count_grid(shear_df['x'], shear_df['y'], resolution_xy, verbose=True)
         fits_filename = config['output_path'] + f"count_{config['cluster']}_{config['band']}.fits"
         save_fits(count_grid, true_boundaries, fits_filename)
+        fits_filename = config['output_path'] + f"error_{config['cluster']}_{config['band']}.fits"
+        
     
     if config["shuffle_type"] == "rotation":
         shuffled_dfs = utilsv2.generate_multiple_shear_dfs(shear_df, config['num_sims'], seed=config['seed_sims'])
@@ -199,6 +222,8 @@ if __name__ == "__main__":
             kappa_e_stack_smoothed_xy[i] = gaussian_filter(kappa_e_stack_xy[i], kernel)
     
         std_xy = np.std(kappa_e_stack_smoothed_xy, axis=0)
+        if args.save_fits:
+            save_fits(std_xy, true_boundaries, fits_filename)
         snr_xy = gaussian_filter(og_kappa_e_2, kernel) / std_xy
         if args.plot_error:
             plot_kmap.plot_convergence_v4(

@@ -600,3 +600,25 @@ def find_peaks_v2(convergence, boundaries, smoothing=1.5, threshold=None):
     #ra_peaks =  (boundaries['ra_max'] - ra_peaks[0]) + boundaries['ra_min']
         
     return ra_peaks, dec_peaks, heights
+
+
+def crop_center_50(image):
+    """
+    Crop the central 50% of a 2D image array along both axes.
+
+    Parameters:
+        image (np.ndarray): 2D array representing the map (e.g., g1, g2, or kappa).
+
+    Returns:
+        cropped (np.ndarray): The central 50% cropped image.
+    """
+    if image.ndim != 2:
+        raise ValueError("Input must be a 2D array.")
+    
+    ny, nx = image.shape
+    start_y = ny // 4
+    end_y = start_y + ny // 2
+    start_x = nx // 4
+    end_x = start_x + nx // 2
+
+    return image[start_y:end_y, start_x:end_x]
