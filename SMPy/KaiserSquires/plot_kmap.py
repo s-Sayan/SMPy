@@ -419,7 +419,7 @@ def plot_convergence_v4(convergence, scaled_boundaries, true_boundaries, config,
     if ra_center is not None:
         if invert_map:
             ra_center =  (scaled_boundaries['ra_max'] - np.array(ra_center)) + scaled_boundaries['ra_min']
-        ax.scatter(ra_center, dec_center, marker='x', color='lime', s=50, label='X-ray Center')
+        ax.scatter(ra_center, dec_center, marker='x', color='lime', s=50, label='FOV Center')
         #ax.axhline(y=dec_center, color='w', linestyle='--')
         #ax.axvline(x=ra_center, color='w', linestyle='--')
         

@@ -20,7 +20,7 @@ with open(config_file, 'r') as file:
 # Update cluster, band, and input_path
 config['cluster'] = cluster_name
 config['band'] = band_name
-config['input_path'] = f"/work/mccleary_group/saha/data/{cluster_name}/{band_name}/out/{cluster_name}_{band_name}_annular.fits"
+config['input_path'] = f"/projects/mccleary_group/saha/data/{cluster_name}/{band_name}/out/{cluster_name}_{band_name}_annular.fits"
 
 # Save the updated YAML file
 with open(config_file, 'w') as file:

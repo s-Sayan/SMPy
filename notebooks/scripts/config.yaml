@@ -4,14 +4,14 @@ cluster: Abell3411
 band: b
 
 # Paths
-input_path: /work/mccleary_group/saha/data/Abell3411/b/out/Abell3411_b_annular_combined.fits
+input_path: /projects/mccleary_group/saha/data/Abell3411/b/out_backup/Abell3411_b_annular_combined.fits
 output_path: ./
 
 # Parameters
-resolution: 0.61
+resolution: 0.63
 gaussian_kernel: 1.5
-vmax: 4.0
-vmin: -4.0
+vmax: 4.5
+vmin: -4.5
 kmap_vmax: 0.1
 kmap_vmin: -0.1
 threshold: 2.5
@@ -37,5 +37,5 @@ y_col: Y_IMAGE
 center: {ra_center: 130.4488, dec_center: -17.4795}
 #center: None
 mode: [E]
-box_boundary:
+box_boundary: #{'ra_min': 130.3523395560942, 'ra_max': 130.5475200832765, 'dec_min': -17.594573548767865, 'dec_max': -17.379933813338113}
 gridding: xy 

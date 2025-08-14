@@ -4,9 +4,9 @@ import numpy as np
 from tqdm import tqdm
 
 # File paths
-file_b = "/work/mccleary_group/saha/data/AbellS0592/b/out/AbellS0592_b_annular.fits"
-file_g = "/work/mccleary_group/saha/data/AbellS0592/g/out/AbellS0592_g_annular.fits"
-output_file = "/work/mccleary_group/saha/data/AbellS0592/combined_annular.fits"
+file_b = "/projects/mccleary_group/saha/data/AbellS0592/b/out/AbellS0592_b_annular.fits"
+file_g = "/projects/mccleary_group/saha/data/AbellS0592/g/out/AbellS0592_g_annular.fits"
+output_file = "/projects/mccleary_group/saha/data/AbellS0592/combined_annular.fits"
 
 # Define angular tolerance in degrees
 tolerance_deg = 1e-3  # Adjust as needed

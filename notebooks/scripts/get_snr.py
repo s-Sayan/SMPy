@@ -3,10 +3,12 @@ import numpy as np
 import pandas as pd
 from astropy.table import Table
 from astropy.io import fits
+from astropy.wcs import WCS
 import yaml
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 from SMPy import utilsv2, utils
+import os
 from SMPy.KaiserSquires import kaiser_squires, plot_kmap
 
 # Function to read the YAML config file
@@ -62,35 +64,41 @@ def correct_box_boundary(box_boundary, ra_0, dec_0):
 def save_fits(data, true_boundaries, filename):
     """
     Save a 2D array as a FITS file with proper WCS information.
-
-    - data: 2D numpy array containing the map.
-    - true_boundaries: Dictionary with 'ra_min', 'ra_max', 'dec_min', 'dec_max'.
-    - filename: Output filename.
+    
+    Parameters
+    ----------
+    data : 2D numpy array
+        The image data to be saved.
+    true_boundaries : dict
+        Dictionary with 'ra_min', 'ra_max', 'dec_min', 'dec_max' (degrees).
+    filename : str
+        Output FITS filename.
     """
-    hdu = fits.PrimaryHDU(data)
-    header = hdu.header
-
     ny, nx = data.shape
-    ra_min, ra_max = true_boundaries['ra_min'], true_boundaries['ra_max']
-    dec_min, dec_max = true_boundaries['dec_min'], true_boundaries['dec_max']
+    ra_min = true_boundaries['ra_min']
+    ra_max = true_boundaries['ra_max']
+    dec_min = true_boundaries['dec_min']
+    dec_max = true_boundaries['dec_max']
 
-    pixel_scale_ra = (ra_max - ra_min) / nx
+    ra_center = (ra_max + ra_min) / 2
+    dec_center = (dec_max + dec_min) / 2
+
+    # Compute pixel scale based on Dec, correcting RA compression
+    # This gives a rough approximation for small fields
     pixel_scale_dec = (dec_max - dec_min) / ny
+    pixel_scale_ra = (ra_max - ra_min) / nx * np.cos(np.deg2rad(dec_center))
 
-    header["CTYPE1"] = "RA---TAN"
-    header["CUNIT1"] = "deg"
-    header["CRVAL1"] = (ra_max + ra_min) / 2
-    header["CRPIX1"] = nx / 2
-    header["CD1_1"]  = -pixel_scale_ra
-    header["CD1_2"]  = 0.0
+    # Create WCS centered at field center
+    w = WCS(naxis=2)
+    w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+    w.wcs.cunit = ["deg", "deg"]
+    w.wcs.crval = [ra_center, dec_center]
+    w.wcs.crpix = [nx / 2 + 0.5, ny / 2 + 0.5]
+    w.wcs.cdelt = [-pixel_scale_ra, pixel_scale_dec]  # RA axis flipped
 
-    header["CTYPE2"] = "DEC--TAN"
-    header["CUNIT2"] = "deg"
-    header["CRVAL2"] = (dec_max + dec_min) / 2
-    header["CRPIX2"] = ny / 2
-    header["CD2_1"]  = 0.0
-    header["CD2_2"]  = pixel_scale_dec
-
+    # Update FITS header
+    header = w.to_header()
+    hdu = fits.PrimaryHDU(data, header=header)
     hdu.writeto(filename, overwrite=True)
     print(f"Saved FITS file: {filename}")
 
@@ -154,6 +162,8 @@ if __name__ == "__main__":
             shear_df['ra'], shear_df['dec'], shear_df['g1'], shear_df['g2'], config["resolution"], shear_df['weight'], verbose=True
         )
         og_kappa_e_2, og_kappa_b_2 = kaiser_squires.ks_inversion(g1map_og_2, g2map_og_2, key='ra-dec')
+        og_kappa_e_2 = og_kappa_e_2[:,::-1]
+        og_kappa_b_2 = og_kappa_b_2[:,::-1]
     else:
         KeyError("Invalid gridding type. Must be either 'xy' or 'ra-dec'.")
 
@@ -198,7 +208,10 @@ if __name__ == "__main__":
         save_fits(og_kappa_e_2_smoothed, true_boundaries, fits_filename)
         fits_filename = config['output_path'] + f"kappa_b_{config['cluster']}_{config['band']}.fits"
         save_fits(og_kappa_b_2_smoothed, true_boundaries, fits_filename)
-        count_grid = utils.create_count_grid(shear_df['x'], shear_df['y'], resolution_xy, verbose=True)
+        if config["gridding"] == "xy":
+            count_grid = utils.create_count_grid(shear_df['x'], shear_df['y'], resolution_xy, verbose=True)
+        elif config["gridding"] == "ra_dec":
+            count_grid = utils.create_count_grid(shear_df['ra'], shear_df['dec'], config["resolution"], verbose=True)
         fits_filename = config['output_path'] + f"count_{config['cluster']}_{config['band']}.fits"
         save_fits(count_grid, true_boundaries, fits_filename)
         fits_filename = config['output_path'] + f"error_{config['cluster']}_{config['band']}.fits"
@@ -217,13 +230,48 @@ if __name__ == "__main__":
         shuff_kappa_e_list_xy, shuff_kappa_b_list_xy = utils.ks_inversion_list(g1_g2_map_list_xy, 'xy')
 
         kappa_e_stack_xy = np.stack(shuff_kappa_e_list_xy, axis=0)
+        kappa_b_stack_xy = np.stack(shuff_kappa_b_list_xy, axis=0)
         kappa_e_stack_smoothed_xy = np.zeros_like(kappa_e_stack_xy)
+        kappa_b_stack_smoothed_xy = np.zeros_like(kappa_b_stack_xy)
         for i in range(kappa_e_stack_xy.shape[0]):
             kappa_e_stack_smoothed_xy[i] = gaussian_filter(kappa_e_stack_xy[i], kernel)
+            kappa_b_stack_smoothed_xy[i] = gaussian_filter(kappa_b_stack_xy[i], kernel)
     
         std_xy = np.std(kappa_e_stack_smoothed_xy, axis=0)
         if args.save_fits:
             save_fits(std_xy, true_boundaries, fits_filename)
+            fits_filename = config['output_path'] + f"/noises/noise_realisation_{config['cluster']}_{config['band']}.fits"
+            os.makedirs(os.path.dirname(fits_filename), exist_ok=True)
+            for i in range(config['num_sims']):
+                if i > 0 and i % 250 == 0:
+                    fits_filename = config['output_path'] + f"/noises/noise_e_realisation_{i}_{config['cluster']}_{config['band']}.fits"
+                    save_fits(kappa_e_stack_smoothed_xy[i], true_boundaries, fits_filename)
+                    plot_kmap.plot_convergence_v4(
+                        kappa_e_stack_smoothed_xy[i],
+                        boundaries,
+                        true_boundaries,
+                        config,
+                        invert_map=False,
+                        title=f"Noise E mode ({i}): "+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
+                        vmax= config['kmap_vmax'],
+                        vmin= config['kmap_vmin'], 
+                        center_cl=center_cl,
+                        save_path=config['output_path']+f"/noises/noise_e_realisation_{i}_{config['cluster']}_{config['band']}.png"
+                    )
+                    fits_filename = config['output_path'] + f"/noises/noise_b_realisation_{i}_{config['cluster']}_{config['band']}.fits"
+                    save_fits(kappa_b_stack_smoothed_xy[i], true_boundaries, fits_filename)
+                    plot_kmap.plot_convergence_v4(
+                        kappa_b_stack_smoothed_xy[i],
+                        boundaries,
+                        true_boundaries,
+                        config,
+                        invert_map=False,
+                        title=f"Noise B mode ({i}): "+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
+                        vmax= config['kmap_vmax'],
+                        vmin= config['kmap_vmin'], 
+                        center_cl=center_cl,
+                        save_path=config['output_path']+f"/noises/noise_b_realisation_{i}_{config['cluster']}_{config['band']}.png"
+                    )                                        
         snr_xy = gaussian_filter(og_kappa_e_2, kernel) / std_xy
         if args.plot_error:
             plot_kmap.plot_convergence_v4(
@@ -259,6 +307,7 @@ if __name__ == "__main__":
         kappa_e_stack = np.stack(shuff_kappa_e_list, axis=0)
         kappa_e_stack_smoothed = np.zeros_like(kappa_e_stack)
         for i in range(kappa_e_stack.shape[0]):
+            kappa_e_stack[i] = kappa_e_stack[i][:,::-1]
             kappa_e_stack_smoothed[i] = gaussian_filter(kappa_e_stack[i], kernel)
         std = np.std(kappa_e_stack_smoothed, axis=0)
         snr = gaussian_filter(og_kappa_e_2, kernel) / std
