@@ -184,7 +184,7 @@ if __name__ == "__main__":
             title="Convergence: "+config['cluster']+"_"+config['band'] + f" (Resolution: {config['resolution']:.2f} arcmin, Kernel: {kernel:.2f})",
             vmax= config['kmap_vmax'],
             vmin= config['kmap_vmin'], 
-            #threshold=config['threshold'],
+            threshold=config['kmap_threshold'],
             center_cl=center_cl,
             box_boundary=box_boundary,
             save_path=config['output_path']+"kappa_"+config['cluster']+"_"+config['band']+".png"

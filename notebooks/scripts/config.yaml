@@ -15,6 +15,7 @@ vmin: -4.5
 kmap_vmax: 0.1
 kmap_vmin: -0.1
 threshold: 2.5
+kmap_threshold: 0.07
 num_sims: 1000
 seed_sims: 12000
 shuffle_type: rotation     # 'spatial' or 'rotation'
